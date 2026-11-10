@@ -6,7 +6,7 @@
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `hera-journal-shell-${CACHE_VERSION}`;
 const APP_SHELL = [
-  './赫拉手帐.html',
+  './index.html',
   './wiki-data.json',
   './manifest.json',
   './icons/icon-192.png',
@@ -14,7 +14,7 @@ const APP_SHELL = [
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png'
 ];
-const PAGE_URL = new URL('./赫拉手帐.html', self.location.href).href;
+const PAGE_URL = new URL('./index.html', self.location.href).href;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

@@ -5,7 +5,7 @@
   "description": "一个只保存在本地的女性周期、情绪与健康手帐。记录身体，翻译疼痛，粉碎谣言。",
   "lang": "zh-CN",
   "dir": "ltr",
-  "start_url": "./赫拉手帐.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
