@@ -4358,6 +4358,8 @@ body.privacy-mode .predict-line{ display: none; }
               </button>
             </div>
             <p class="vault-boundary" id="vaultBoundary">清除浏览器数据 = 本机密钥丢失；忘记主密码且本机密钥丢失 = 数据无法恢复。</p>
+            <!-- [2.12] 托管日志说明：应用本身不联网，但托管平台可能记录访问日志 -->
+            <p class="vault-boundary" id="vaultHostNote">应用代码不发起任何网络请求，数据仅存于本机。但托管平台（如 GitHub Pages）可能记录基础访问日志（IP/时间/UA），这不在应用控制范围内。</p>
             <p class="vault-unsupported" id="vaultUnsupported" hidden>当前浏览器不支持本地加密。</p>
           </div>
         </div>
@@ -4462,6 +4464,19 @@ body.privacy-mode .predict-line{ display: none; }
       </div>
     </form>
     <p class="dialog-note">加密只作用于本机记录，导出的备份文件仍是明文。</p>
+  </div>
+</dialog>
+
+<!-- [2.11] 开启加密前的备份护栏：有记录却从未导出过时，先拦一次 -->
+<dialog class="vault-dialog" id="vaultBackupDialog" aria-labelledby="vaultBackupTitle">
+  <div class="dialog-inner">
+    <div class="dialog-icon" aria-hidden="true"><svg class="icon"><use href="#i-info"></use></svg></div>
+    <h3 id="vaultBackupTitle">先留一份备份，再上锁</h3>
+    <p>你还没有导出过备份。开启加密后，如果忘记密码，数据将永远无法找回。建议先去【导出我的数据】存一份备份。</p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" type="button" id="vaultBackupLater">先不开启，去备份</button>
+      <button class="btn btn-sage" type="button" id="vaultBackupProceed">我已了解风险，直接开启</button>
+    </div>
   </div>
 </dialog>
 
@@ -7523,6 +7538,10 @@ body.privacy-mode .predict-line{ display: none; }
   const vaultEnableSubmit = $('#vaultEnableSubmit');
   const vaultEnableCancel = $('#vaultEnableCancel');
   const vaultEnableClose = $('#vaultEnableClose');
+  // [2.11] 开启加密前的备份护栏
+  const vaultBackupDialog = $('#vaultBackupDialog');
+  const vaultBackupLater = $('#vaultBackupLater');
+  const vaultBackupProceed = $('#vaultBackupProceed');
   const vaultUnlockDialog = $('#vaultUnlockDialog');
   const vaultUnlockForm = $('#vaultUnlockForm');
   const vaultUnlockPassword = $('#vaultUnlockPassword');
@@ -13240,6 +13259,17 @@ body.privacy-mode .predict-line{ display: none; }
         refreshVaultPanel(true);
       });
     }
+    // [2.11] 备份护栏的两个出口
+    if (vaultBackupProceed) {
+      vaultBackupProceed.addEventListener('click', () => {
+        vaultBackupRiskAcknowledged = true;
+        closeVaultDialog(vaultBackupDialog);
+        submitVaultEnable();
+      });
+    }
+    if (vaultBackupLater) {
+      vaultBackupLater.addEventListener('click', goBackupInstead);
+    }
     if (vaultUnlockForm) {
       vaultUnlockForm.addEventListener('submit', attemptVaultUnlock);
     }
@@ -13519,6 +13549,7 @@ body.privacy-mode .predict-line{ display: none; }
   let vaultCooldownTimer = 0;
   let vaultClearArmed = false;
   let vaultClearTimer = 0;
+  let vaultBackupRiskAcknowledged = false; // [2.11] 用户在备份护栏里选择了“直接开启”
 
   function closeVaultDialog(element) {
     if (!element) return;
@@ -13562,6 +13593,7 @@ body.privacy-mode .predict-line{ display: none; }
       refreshVaultPanel(true);
       return;
     }
+    vaultBackupRiskAcknowledged = false; // [2.11] 每次重新打开都重新问一次
     if (vaultEnableError) { vaultEnableError.hidden = true; vaultEnableError.textContent = ''; }
     if (vaultEnablePassword) vaultEnablePassword.value = '';
     if (vaultEnableConfirm) vaultEnableConfirm.value = '';
@@ -13576,6 +13608,30 @@ body.privacy-mode .predict-line{ display: none; }
     });
   }
 
+  // [2.11] 备份护栏：有记录、却从未导出过备份时，先拦一次
+  function openVaultBackupGuard() {
+    if (!vaultBackupDialog) return;
+    if (typeof vaultBackupDialog.showModal === 'function') {
+      if (!vaultBackupDialog.open) vaultBackupDialog.showModal();
+    } else {
+      vaultBackupDialog.setAttribute('open', '');
+    }
+    requestAnimationFrame(() => {
+      try { if (vaultBackupLater) vaultBackupLater.focus({ preventScroll: true }); } catch (error) { /* 忽略 */ }
+    });
+  }
+
+  // [2.11] “先不开启，去备份”：关掉两层对话框，把用户带到导出按钮
+  function goBackupInstead() {
+    closeVaultDialog(vaultBackupDialog);
+    closeVaultDialog(vaultEnableDialog);
+    const exportButton = $('#exportData');
+    if (exportButton) {
+      try { exportButton.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (error) { /* 忽略 */ }
+      try { exportButton.focus({ preventScroll: true }); } catch (error) { /* 忽略 */ }
+    }
+  }
+
   async function submitVaultEnable(event) { // [2.3]
     if (event) event.preventDefault();
     const password = vaultEnablePassword ? vaultEnablePassword.value : '';
@@ -13586,6 +13642,13 @@ body.privacy-mode .predict-line{ display: none; }
     }
     if (!vaultAcknowledge || !vaultAcknowledge.checked) {
       vaultShowEnableError('请先勾选确认，了解恢复风险。');
+      return;
+    }
+    // [2.11] 有记录但从未备份过：先弹二次确认，避免开启后忘记密码导致数据永远找不回
+    const hasRecords = Object.keys(state.records || {}).length > 0;
+    const hasBackup = Boolean(state.meta && state.meta.lastBackupAt);
+    if (hasRecords && !hasBackup && !vaultBackupRiskAcknowledged) {
+      openVaultBackupGuard();
       return;
     }
     if (vaultEnableSubmit && vaultEnableSubmit.disabled) return;
