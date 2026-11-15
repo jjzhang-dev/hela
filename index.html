@@ -915,6 +915,28 @@ body.privacy-mode #medicationInput{
   cursor: default;
 }
 body.privacy-mode #medicationInput::placeholder{ color: transparent !important; }
+/* [6.3] 体温输入沿用同一套遮罩：只藏字迹，不改 value */
+body.privacy-mode #temperatureInput{
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: transparent !important;
+  cursor: default;
+}
+body.privacy-mode #temperatureInput::placeholder{ color: transparent !important; }
+/* [6.6] 越界体温的轻微提示：只换边框与底色，不做红色警告框 */
+#temperatureInput[aria-invalid="true"]{
+  border-color: rgba(162,94,76,.55);
+  background: rgba(250,233,226,.5);
+}
+/* [6.2] 月经量提示与胶囊：防窥时文字由 JS 换成 ***，这里只负责排版 */
+.flow-hint{ margin: 7px 0 0; color: var(--muted-light); font-size: 9.5px; line-height: 1.6; }
+.flow-options{ margin-top: 2px; }
+/* [6.5] 性生活是极隐私信息：防窥时整组模糊并禁点，避免靠“选中态”泄露 */
+body.privacy-mode .extra-options[aria-label="性生活"] .extra-btn{
+  filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
 .extra-clear{ margin-top: 13px; padding: 0; border: 0; background: transparent; color: var(--muted-light); font-size: 9px; text-decoration: underline; text-underline-offset: 3px; }
 .extra-clear:hover{ color: var(--rust); }
 
@@ -3822,6 +3844,17 @@ body.privacy-mode .predict-line{ display: none; }
             </button>
           </div>
 
+          <!-- [6.2] 月经量：三个极简胶囊，单击选中，再点一次取消 -->
+          <div class="field" data-rest-hide>
+            <div class="field-label"><span>月经量</span><span class="tiny">再点一次可取消</span></div>
+            <div class="extra-options flow-options" role="group" aria-label="月经量">
+              <button class="extra-btn" type="button" data-extra="flow" data-value="low" aria-pressed="false">少</button>
+              <button class="extra-btn" type="button" data-extra="flow" data-value="normal" aria-pressed="false">正常</button>
+              <button class="extra-btn" type="button" data-extra="flow" data-value="high" aria-pressed="false">多</button>
+            </div>
+            <p class="flow-hint" id="flowHint">量多量少都只是记录，不是评价。</p>
+          </div>
+
           <div class="field" data-rest-hide>
             <div class="field-label"><span>留一句话</span><span class="tiny">只给自己看</span></div>
             <div class="note-shell">
@@ -3882,16 +3915,43 @@ body.privacy-mode .predict-line{ display: none; }
               <div class="extra-group">
                 <span class="extra-group-label">性生活</span>
                 <div class="extra-options" role="group" aria-label="性生活">
-                  <button class="extra-btn" type="button" data-extra="intimacy" data-value="yes">有</button>
+                  <!-- [6.3] 三态：无 / 有(已避孕) / 有(未避孕)，隐私属性最强，不进主诉 -->
                   <button class="extra-btn" type="button" data-extra="intimacy" data-value="no">无</button>
+                  <button class="extra-btn" type="button" data-extra="intimacy" data-value="yes_safe">有(已避孕)</button>
+                  <button class="extra-btn" type="button" data-extra="intimacy" data-value="yes_unsafe">有(未避孕)</button>
                 </div>
               </div>
               <div class="extra-group">
-                <span class="extra-group-label">宫颈黏液</span>
-                <div class="extra-options" role="group" aria-label="宫颈黏液">
-                  <button class="extra-btn" type="button" data-extra="mucus" data-value="dry">干</button>
-                  <button class="extra-btn" type="button" data-extra="mucus" data-value="moist">润</button>
-                  <button class="extra-btn" type="button" data-extra="mucus" data-value="stretchy">拉丝</button>
+                <!-- [6.3] 原“宫颈黏液”改成日常说法“分泌物” -->
+                <span class="extra-group-label">分泌物</span>
+                <div class="extra-options" role="group" aria-label="分泌物">
+                  <button class="extra-btn" type="button" data-extra="mucus" data-value="dry">干燥</button>
+                  <button class="extra-btn" type="button" data-extra="mucus" data-value="moist">粘稠</button>
+                  <button class="extra-btn" type="button" data-extra="mucus" data-value="stretchy">蛋清状</button>
+                </div>
+              </div>
+              <div class="extra-group">
+                <label class="extra-group-label" for="temperatureInput">体温</label>
+                <!-- [6.3] 体温：和用药一样用遮罩层，防窥时字迹不外露 -->
+                <div class="med-shell">
+                  <input class="extra-med" type="number" id="temperatureInput" step="0.1" min="34" max="43" maxlength="4" placeholder="如 36.5" inputmode="decimal" autocomplete="off">
+                  <span class="med-mask" id="temperatureMask" aria-hidden="true">***</span>
+                </div>
+              </div>
+              <div class="extra-group">
+                <span class="extra-group-label">便便</span>
+                <div class="extra-options" role="group" aria-label="便便">
+                  <button class="extra-btn" type="button" data-extra="bowel" data-value="normal">正常</button>
+                  <button class="extra-btn" type="button" data-extra="bowel" data-value="diarrhea">腹泻</button>
+                  <button class="extra-btn" type="button" data-extra="bowel" data-value="constipation">便秘</button>
+                </div>
+              </div>
+              <div class="extra-group">
+                <span class="extra-group-label">其他不适</span>
+                <div class="extra-options" role="group" aria-label="其他不适">
+                  <button class="extra-btn" type="button" data-extra="symptoms" data-value="back">腰酸</button>
+                  <button class="extra-btn" type="button" data-extra="symptoms" data-value="breast">乳房胀痛</button>
+                  <button class="extra-btn" type="button" data-extra="symptoms" data-value="dizzy">头晕</button>
                 </div>
               </div>
               <button class="extra-clear" type="button" id="extraClear">清空这几项</button>
@@ -4645,13 +4705,23 @@ body.privacy-mode .predict-line{ display: none; }
   ];
 
   // [3.2] 可选扩展字段：只做记录，不参与评分，也不触发任何提醒
-  const EXTRA_FIELD_KEYS = ['sleep', 'exercise', 'medication', 'intimacy', 'mucus'];
+  // [6.1] 每日面板升级：新增体温、便便、其他不适；月经量单独放在主面板
+  const EXTRA_FIELD_KEYS = ['sleep', 'exercise', 'medication', 'intimacy', 'mucus', 'temperature', 'bowel', 'symptoms'];
   const MEDICATION_MAX = 100;
+  const TEMPERATURE_MAX = 5;
+  // [6.6] 体温的医学范围：34.0–43.0 之外一律视为误输入
+  const TEMPERATURE_MIN = 34;
+  const TEMPERATURE_MAX_VALUE = 43;
+  const FLOW_VALUES = ['low', 'normal', 'high'];
   const EXTRA_FIELD_VALUES = {
     sleep: ['low', 'normal', 'high'],
     exercise: ['none', 'light', 'moderate', 'intense'],
-    intimacy: ['yes', 'no'],
-    mucus: ['dry', 'moist', 'stretchy']
+    // [6.3] 性生活换成三态：无 / 有(已避孕) / 有(未避孕)
+    // 旧的 'yes' 只能说明“有”，不知道是否避孕，保留为未知值以免旧记录被当成空记录删掉
+    intimacy: ['no', 'yes_safe', 'yes_unsafe', 'yes'],
+    mucus: ['dry', 'moist', 'stretchy'],
+    bowel: ['normal', 'diarrhea', 'constipation'],
+    symptoms: ['back', 'breast', 'dizzy']
   };
 
   const BODY_CHECK_INFO = {
@@ -5886,6 +5956,11 @@ body.privacy-mode .predict-line{ display: none; }
       medication: '',
       intimacy: null,
       mucus: null,
+      // [6.1] 月经量 / 体温 / 便便 / 其他不适：全部可为空，空值不写入
+      flow: null,
+      temperature: '',
+      bowel: null,
+      symptoms: [],
       updatedAt: 0
     };
   }
@@ -5895,6 +5970,8 @@ body.privacy-mode .predict-line{ display: none; }
     // [3.2] 只有扩展字段的日子也算“有记录”
     const hasExtra = Boolean(
       record.sleep || record.exercise || record.intimacy || record.mucus ||
+      record.flow || record.bowel || String(record.temperature || '').trim() ||
+      (Array.isArray(record.symptoms) && record.symptoms.length) ||
       String(record.medication || '').trim()
     );
     return !record.periodEvent && !(record.emotions && record.emotions.length) && !record.pain &&
@@ -5953,7 +6030,7 @@ body.privacy-mode .predict-line{ display: none; }
 
     // [3.2] 扩展字段逐个校验，非法值直接丢弃
     EXTRA_FIELD_KEYS.forEach((field) => {
-      if (field === 'medication') return;
+      if (field === 'medication' || field === 'temperature' || field === 'symptoms') return;
       const value = raw[field];
       if (typeof value === 'string' && EXTRA_FIELD_VALUES[field].indexOf(value) !== -1) {
         record[field] = value;
@@ -5961,6 +6038,31 @@ body.privacy-mode .predict-line{ display: none; }
     });
     if (typeof raw.medication === 'string' && raw.medication.trim()) {
       record.medication = raw.medication.trim().slice(0, MEDICATION_MAX);
+    }
+
+    // [6.1] 月经量：只接受 low / normal / high
+    if (typeof raw.flow === 'string' && FLOW_VALUES.indexOf(raw.flow) !== -1) {
+      record.flow = raw.flow;
+    }
+    // [6.1] 体温：只接受“字符串形式的数字”（如 "36.5"），最多 5 个字符
+    if (typeof raw.temperature === 'string') {
+      const temperature = raw.temperature.trim();
+      if (/^\d{1,2}(?:\.\d{1,2})?$/.test(temperature)) {
+        const numeric = Number(temperature);
+        // [6.6] 医学范围拦截：34.0 以下、43.0 以上（如 4000）直接丢弃
+        if (Number.isFinite(numeric) && numeric >= TEMPERATURE_MIN && numeric <= TEMPERATURE_MAX_VALUE) {
+          record.temperature = temperature.slice(0, TEMPERATURE_MAX);
+        }
+      }
+    }
+    // [6.1] 其他不适：数组，逐项过滤非法值并去重
+    if (Array.isArray(raw.symptoms)) {
+      raw.symptoms.forEach((value) => {
+        if (typeof value !== 'string') return;
+        if (EXTRA_FIELD_VALUES.symptoms.indexOf(value) === -1) return;
+        if (record.symptoms.indexOf(value) !== -1) return;
+        record.symptoms.push(value);
+      });
     }
 
     const updatedAt = Number(raw.updatedAt);
@@ -7284,6 +7386,9 @@ body.privacy-mode .predict-line{ display: none; }
   const extraClear = $('#extraClear'); // [3.2]
   const medicationInput = $('#medicationInput'); // [3.2]
   const medicationMask = $('#medicationMask'); // [3.6] 防窥用的星号遮罩层
+  const flowHint = $('#flowHint'); // [6.2] 月经量提示
+  const temperatureInput = $('#temperatureInput'); // [6.3] 体温输入
+  const temperatureMask = $('#temperatureMask'); // [6.3] 体温防窥遮罩
   const dayRestLink = $('#dayRestLink'); // [3.4]
   const dayRestNote = $('#dayRestNote'); // [3.4]
   const dayRestResume = $('#dayRestResume'); // [3.4]
@@ -7903,6 +8008,24 @@ body.privacy-mode .predict-line{ display: none; }
     if (painCaption) painCaption.textContent = PAIN_LABELS[pain] || PAIN_LABELS[0];
     if (painAlert) painAlert.hidden = !(pain >= 4) || future;
 
+    // [6.2] 月经量：单选高亮，再点一次取消由点击处理负责
+    $$('.flow-options .extra-btn', dayCard).forEach((button) => {
+      const active = Boolean(record && record.flow === button.dataset.value);
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+      button.disabled = future;
+    });
+    if (flowHint) {
+      if (future) {
+        flowHint.textContent = '等这一天真的到来，再记录也不迟。';
+      } else if (record && record.flow) {
+        const flowLabel = record.flow === 'high' ? '多' : (record.flow === 'low' ? '少' : '正常');
+        flowHint.textContent = `今天的月经量：${flowLabel}。`;
+      } else {
+        flowHint.textContent = '量多量少都只是记录，不是评价。';
+      }
+    }
+
     if (generateLeaveBtn) {
       // [防窥加固] 防窥模式下入口直接隐藏，别让人点开一个模糊的弹窗
       const canRequestLeave = !future && pain >= 3 && !document.body.classList.contains('privacy-mode');
@@ -7931,16 +8054,44 @@ body.privacy-mode .predict-line{ display: none; }
       if (emotionHint) emotionHint.textContent = PRIVACY_STARS;
       if (painLevelText) painLevelText.textContent = PRIVACY_STARS;
       if (painCaption) painCaption.textContent = PRIVACY_STARS;
+      if (flowHint) flowHint.textContent = PRIVACY_STARS; // [6.2]
     }
     if (document.body.classList.contains('privacy-mode')) maskPrivacyTexts();
   }
 
+  // [6.6] 体温保存的唯一判定入口：数字且在 34.0–43.0 之间才算合法
+  function isTemperatureInRange(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) && numeric >= TEMPERATURE_MIN && numeric <= TEMPERATURE_MAX_VALUE;
+  }
+
+  // [6.6] 输入框过滤：只留数字和最多一个小数点（两位整数 + 一位小数）
+  function sanitiseTemperatureText(value) {
+    let text = String(value == null ? '' : value).replace(/[^\d.]/g, '');
+    const dot = text.indexOf('.');
+    if (dot === -1) return text.slice(0, 4);
+    const whole = text.slice(0, dot).slice(0, 2);
+    const fraction = text.slice(dot + 1).replace(/\./g, '').slice(0, 1);
+    return `${whole}.${fraction}`;
+  }
+
   async function applyRecordPatch(patch) { // [1.1] 异步化：内部 await persist()，返回值语义不变
+    // [6.6] 兜底：任何入口写入的越界体温（含 4000 这类误输入）都直接丢弃
+    patch = Object.assign({}, patch);
+    if (Object.prototype.hasOwnProperty.call(patch, 'temperature')) {
+      const value = patch.temperature;
+      const empty = value == null || value === '';
+      if (!empty && !isTemperatureInRange(value)) {
+        delete patch.temperature;
+      }
+    }
     const existing = state.records[selectedKey] || emptyRecord();
     const next = Object.assign({}, existing, patch, { updatedAt: Date.now() });
     // [3.2] 扩展字段为空时不写进记录，也不占存储
     EXTRA_FIELD_KEYS.forEach((field) => {
-      if (next[field] == null || next[field] === '') delete next[field];
+      const value = next[field];
+      // [6.1] 多选字段（symptoms）清空后是 []，同样不落盘
+      if (value == null || value === '' || (Array.isArray(value) && !value.length)) delete next[field];
     });
     if (isRecordEmpty(next)) {
       delete state.records[selectedKey];
@@ -8367,6 +8518,7 @@ body.privacy-mode .predict-line{ display: none; }
 
   let dayRestMode = false; // [3.4] 只活在这次会话里，不写存储，刷新即恢复
   let medicationSaveTimer = 0;
+  let temperatureSaveTimer = 0; // [6.3] 体温输入防抖
 
   // [3.1] 用最近几次经期推一个阶段窗口；数据不够就返回 null
   function getPhaseWindow() {
@@ -8478,7 +8630,10 @@ body.privacy-mode .predict-line{ display: none; }
 
     $$('.extra-btn', extraSection).forEach((button) => {
       const field = button.dataset.extra;
-      const active = Boolean(record && record[field] === button.dataset.value);
+      // [6.3] 其他不适是多选字段，用 includes 判断高亮
+      const active = field === 'symptoms'
+        ? Boolean(record && Array.isArray(record.symptoms) && record.symptoms.indexOf(button.dataset.value) !== -1)
+        : Boolean(record && record[field] === button.dataset.value);
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
       button.disabled = future;
@@ -8503,6 +8658,25 @@ body.privacy-mode .predict-line{ display: none; }
       }
     }
 
+    // [6.3] 体温：与用药同样处理，值永远是真实字符串，防窥只盖遮罩
+    if (temperatureInput) {
+      const value = record && typeof record.temperature === 'string' ? record.temperature : '';
+      if (document.activeElement !== temperatureInput) {
+        temperatureInput.value = value;
+      }
+      temperatureInput.disabled = future;
+      if (privacyMode) {
+        privacyLockField(temperatureInput);
+        if (temperatureMask) {
+          temperatureMask.classList.toggle('is-on', Boolean(temperatureInput.value.trim()));
+        }
+      } else {
+        temperatureInput.readOnly = false;
+        temperatureInput.removeAttribute('title');
+        if (temperatureMask) temperatureMask.classList.remove('is-on');
+      }
+    }
+
     if (extraClear) extraClear.disabled = future;
   }
 
@@ -8513,6 +8687,17 @@ body.privacy-mode .predict-line{ display: none; }
     updates[field] = value;
     await applyRecordPatch(updates);
     renderExtendedFields();
+  }
+
+  // [6.3] 其他不适是多选：同一个值再点一次就取消，空数组不会落盘
+  async function toggleExtraField(field, value) {
+    if (isSelectedFuture()) return;
+    const record = currentRecord();
+    const list = record && Array.isArray(record[field]) ? record[field].slice() : [];
+    const index = list.indexOf(value);
+    if (index === -1) list.push(value);
+    else list.splice(index, 1);
+    await setExtraField(field, list);
   }
 
   // [3.4] “今天先不记”只切一次视图，不写记录
@@ -9307,6 +9492,16 @@ body.privacy-mode .predict-line{ display: none; }
       .forEach((word) => pushSymptomSeed({ id: `word-${word}`, label: word }));
     detectBleedingSymptoms(symptomText).forEach((label) => pushSymptomSeed({ id: `bleed-${label}`, label }));
     discharges.forEach((label) => pushSymptomSeed({ id: `discharge-${label}`, label }));
+
+    // [6.4] 当天记录的量化信息也进伴随症状：量大 → 经量增多，腹泻 → 腹泻
+    // 性生活属于极隐私信息，只留在本机记录里，永远不进主诉/伴随症状
+    const memoDayInfo = state.records[selectedKey];
+    if (memoDayInfo && memoDayInfo.flow === 'high') {
+      pushSymptomSeed({ id: 'flow-high', label: '经量增多' });
+    }
+    if (memoDayInfo && memoDayInfo.bowel === 'diarrhea') {
+      pushSymptomSeed({ id: 'bowel-diarrhea', label: '腹泻' });
+    }
 
     // [5.2] 第四段 已尝试措施：药物 + 非药物处理
     const measureLines = medInfo.meds
@@ -11612,6 +11807,8 @@ body.privacy-mode .predict-line{ display: none; }
     if (timeLetterToggle) timeLetterToggle.disabled = future;
     if (medicationInput) medicationInput.disabled = future;
     if (medicationMask) medicationMask.classList.remove('is-on');
+    if (temperatureInput) temperatureInput.disabled = future; // [6.3]
+    if (temperatureMask) temperatureMask.classList.remove('is-on');
   }
 
   function maskPrivacyDayNote() {
@@ -11636,6 +11833,9 @@ body.privacy-mode .predict-line{ display: none; }
     // [防窥加固] 情绪可以多选：逐个遮蔽，不按 active 数分叉，选了几个都遮掉
     $$('.emotion-name').forEach(maskPrivacyNode);
 
+    // [6.2] 月经量按钮文字与提示同样属于身体信息，防窥时一起遮掉（选中态保留）
+    $$('.flow-options .extra-btn', dayCard).forEach(maskPrivacyNode);
+
     $$('.pain-num').forEach(maskPrivacyNode);
 
     // [0.5] 首页问候、每日一句、疼痛与情绪提示等敏感文本一律替换为 ***
@@ -11646,7 +11846,8 @@ body.privacy-mode .predict-line{ display: none; }
       painCaption,
       emotionHint,
       periodHint,
-      painLevelText
+      painLevelText,
+      flowHint
     ].forEach(maskPrivacyNode);
 
     // [3.6] 用药是自由文本：只上只读锁 + 点亮 CSS 遮罩，严禁改写 value
@@ -11654,6 +11855,14 @@ body.privacy-mode .predict-line{ display: none; }
       privacyLockField(medicationInput);
       if (medicationMask) {
         medicationMask.classList.toggle('is-on', Boolean(medicationInput.value.trim()));
+      }
+    }
+
+    // [6.3] 体温同理：只锁不写，字迹交给遮罩
+    if (temperatureInput) {
+      privacyLockField(temperatureInput);
+      if (temperatureMask) {
+        temperatureMask.classList.toggle('is-on', Boolean(temperatureInput.value.trim()));
       }
     }
 
@@ -12622,12 +12831,78 @@ body.privacy-mode .predict-line{ display: none; }
       button.addEventListener('click', () => {
         const field = button.dataset.extra;
         const value = button.dataset.value;
+        // [6.3] 其他不适是多选：同一个值再点一次就取消
+        if (field === 'symptoms') {
+          toggleExtraField(field, value);
+          return;
+        }
         const record = currentRecord();
         // 再点一次同一个选项就取消
         const next = record && record[field] === value ? null : value;
         setExtraField(field, next);
       });
     });
+
+    if (temperatureInput) {
+      // [6.3] 体温沿用 500ms 防抖保存，防窥与未来日期一律不写入
+      const markTemperatureInvalid = (invalid) => {
+        if (invalid) temperatureInput.setAttribute('aria-invalid', 'true');
+        else temperatureInput.removeAttribute('aria-invalid');
+      };
+
+      const saveTemperature = async () => {
+        if (document.body.classList.contains('privacy-mode')) return;
+        if (isSelectedFuture()) return;
+        clearTimeout(temperatureSaveTimer);
+        temperatureSaveTimer = 0;
+        const record = currentRecord();
+        const savedValue = record && record.temperature ? record.temperature : '';
+        const raw = temperatureInput.value.trim();
+        if (!raw) {
+          markTemperatureInvalid(false);
+          if (savedValue) await applyRecordPatch({ temperature: null });
+          return;
+        }
+        // [6.6] 34.0–43.0 之外：轻提示 + 恢复上一次保存的正确值，绝不写入异常数字
+        if (!isTemperatureInRange(raw)) {
+          markTemperatureInvalid(true);
+          showToast('体温输入似乎有些异常，请输入 34.0 - 43.0 之间的数值', {
+            title: '体温范围',
+            tone: 'care',
+            duration: 7000
+          });
+          temperatureInput.value = savedValue;
+          markTemperatureInvalid(false);
+          return;
+        }
+        markTemperatureInvalid(false);
+        const value = raw.slice(0, TEMPERATURE_MAX);
+        if (value !== savedValue) {
+          await applyRecordPatch({ temperature: value });
+        }
+      };
+
+      temperatureInput.addEventListener('input', () => {
+        // [6.6] 前端过滤：只允许数字和一个小数点，粘贴进来的其它字符直接清掉
+        const cleaned = sanitiseTemperatureText(temperatureInput.value);
+        if (cleaned !== temperatureInput.value) {
+          temperatureInput.value = cleaned;
+        }
+        markTemperatureInvalid(Boolean(cleaned) && !isTemperatureInRange(cleaned));
+        if (document.body.classList.contains('privacy-mode')) return;
+        if (isSelectedFuture()) return;
+        clearTimeout(temperatureSaveTimer);
+        // [6.6] 越界时先不落盘，等失焦时统一提示
+        if (cleaned && !isTemperatureInRange(cleaned)) return;
+        temperatureSaveTimer = setTimeout(async () => {
+          temperatureSaveTimer = 0;
+          const value = temperatureInput.value.trim().slice(0, TEMPERATURE_MAX);
+          await applyRecordPatch({ temperature: value || null });
+        }, 500);
+      });
+
+      temperatureInput.addEventListener('blur', saveTemperature);
+    }
 
     if (medicationInput) {
       medicationInput.addEventListener('input', () => {
@@ -12663,7 +12938,11 @@ body.privacy-mode .predict-line{ display: none; }
           exercise: null,
           medication: null,
           intimacy: null,
-          mucus: null
+          mucus: null,
+          // [6.3] 新增字段一起清空
+          temperature: null,
+          bowel: null,
+          symptoms: null
         });
         renderExtendedFields();
       });
