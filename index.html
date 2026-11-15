@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#B77D66">
 <meta name="description" content="赫拉手帐：一个只保存在本地的女性周期、情绪与健康手帐。记录身体，翻译疼痛，粉碎谣言。">
+<!-- 严格 CSP：由于是单文件架构，允许 inline script/style，无外部 CDN 注入风险 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline' 'self'; img-src 'self' data: blob:; font-src data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>赫拉手帐 · 只属于你的身体日记</title>
 <link rel="manifest" href="./manifest.json">
@@ -2587,11 +2588,11 @@ body.privacy-mode .memo-tag-menu{ display: none !important; }
   position: relative; z-index: 1;
   display: flex; align-items: flex-start; gap: 6px;
   margin: 17px 2px 0;
-  color: var(--muted-light);
-  font-size: 9px;
+  color: var(--muted);
+  font-size: 11.5px;
   line-height: 1.75;
 }
-.wiki-footnote .icon{ width: 11px; height: 11px; flex: 0 0 11px; margin-top: 3px; color: var(--sage); }
+.wiki-footnote .icon{ width: 12px; height: 12px; flex: 0 0 12px; margin-top: 3px; color: var(--sage); }
 
 @media (max-width: 920px){
   .wiki-section{ padding: 76px 0 92px; }
@@ -4239,7 +4240,7 @@ body.privacy-mode .predict-line{ display: none; }
 
       <p class="wiki-footnote">
         <svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg>
-        <span>百科内容仅作科普，不能替代医生诊断。若症状持续、加重或影响生活，请及时就医。</span>
+        <span>百科内容仅作科普，不能替代医生诊断。医学指南具有时效性，内容基于发布时的循证资料整理，具体请以医生面诊为准。</span>
       </p>
     </div>
   </section>
@@ -5798,6 +5799,8 @@ body.privacy-mode .predict-line{ display: none; }
     return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
   }
 
+  // [容错] 始终使用浏览器本地时区的真实当前时间：每次调用都重新取 new Date()，
+  // 不使用 UTC，避免东八区用户在早上 8 点前记录时被算成前一天。
   function currentTodayKey() {
     return dateKey(new Date());
   }
@@ -9563,11 +9566,11 @@ body.privacy-mode .predict-line{ display: none; }
         <span>如出现大量阴道出血、晕厥、发热或疼痛持续加重，请尽快急诊。</span>
       </div>
       <div class="memo-foot">
-        <span>本备忘录由赫拉手帐在本机整理，仅用于就诊沟通，不构成诊断或用药建议。</span>
+        <span>本备忘录由赫拉手帐在本机整理，仅用于就诊沟通，不构成诊断或用药建议。医学指南具有时效性，请以医生面诊判断为准。</span>
         <span class="seal">HERA · LOCAL</span>
       </div>
       <!-- [5.4] 打印页脚：屏幕上不显示，只在纸面出现 -->
-      <p class="memo-print-foot">本备忘录由本机整理，不构成诊断。</p>
+      <p class="memo-print-foot">本备忘录由本机整理，不构成诊断。医学指南具有时效性，请以医生面诊判断为准。</p>
     `;
 
     previewState.textContent = '已生成 · 本地整理';
@@ -9657,7 +9660,7 @@ body.privacy-mode .predict-line{ display: none; }
     });
 
     lines.push('提示：如出现大量阴道出血、晕厥、发热或疼痛持续加重，请尽快急诊。');
-    lines.push('本备忘录由本机整理，不构成诊断。');
+    lines.push('本备忘录由本机整理，不构成诊断。医学指南具有时效性，请以医生面诊判断为准。');
     return lines.join('\n').trim();
   }
 
@@ -10040,7 +10043,7 @@ body.privacy-mode .predict-line{ display: none; }
 
     context.fillStyle = '#A89B8C';
     context.font = `10.5px ${CANVAS_SANS}`;
-    const footLineOne = '本备忘录由赫拉手帐在本机根据你的描述整理，仅用于就诊沟通，不构成诊断或用药建议。';
+    const footLineOne = '本备忘录由赫拉手帐在本机根据你的描述整理，仅用于就诊沟通，不构成诊断或用药建议。医学指南具有时效性，请以医生面诊判断为准。';
     const footLineTwo = '赫拉手帐 · 本地生成 · 你的数据没有离开这台设备';
     context.fillText(footLineOne, TEXT_X, footerTop + 24);
     context.fillStyle = '#918475';
@@ -13496,6 +13499,8 @@ body.privacy-mode .predict-line{ display: none; }
 
   function init() {
     const today = new Date();
+    // [容错] 首屏一律按浏览器本地时区重新取一次「今天」，
+    // 避免页面在后台跨天、或标签页恢复后仍停留在昨天的日期上。
     selectedKey = currentTodayKey();
     viewYear = today.getFullYear();
     viewMonth = today.getMonth();
