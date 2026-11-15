@@ -3,7 +3,7 @@
  * localStorage 始终由页面本身管理，缓存清理不会触碰用户记录。
  */
 
-const CACHE_VERSION = 'v5'; // [0.10] 提升版本号，激活时清掉旧外壳
+const CACHE_VERSION = 'v6'; // [0.10] 提升版本号，激活时清掉旧外壳
 const CACHE_NAME = `hera-journal-shell-${CACHE_VERSION}`;
 const APP_SHELL = [
   './index.html',
