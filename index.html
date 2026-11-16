@@ -670,6 +670,13 @@ img, svg{ display: block; }
 }
 .predict-line p{ margin: 0; color: var(--muted); font-size: 10px; line-height: 1.75; letter-spacing: .01em; }
 .predict-line[data-state="insufficient"] .predict-line-dot{ background: var(--muted-light); }
+/* [5.4] 预测已经过期：换 rust 色，让“推迟”看起来就是“需要留意”，而不是正常态 */
+.predict-line[data-state="overdue"]{
+  border-color: rgba(162,94,76,.42);
+  background: rgba(250,233,226,.5);
+}
+.predict-line[data-state="overdue"] .predict-line-dot{ background: var(--rust); }
+.predict-line[data-state="overdue"] p{ color: var(--rust); }
 
 /* [4.1] 预测变成区间后，首尾两天收一点圆角，读起来像“一段”而不是散点 */
 .day-cell.is-predicted-start{ border-top-left-radius: 15px; border-bottom-left-radius: 15px; }
@@ -2869,7 +2876,8 @@ body.is-relief-open{ overflow: hidden; }
 
 .relief-layer{
   position: fixed; inset: 0; z-index: 200;
-  display: grid; place-items: center;
+  margin: 0; max-width: none; max-height: none;
+  border: 0;
   padding: 34px;
   overflow: hidden;
   background: rgba(0,0,0,.95);
@@ -2877,6 +2885,10 @@ body.is-relief-open{ overflow: hidden; }
   opacity: 0;
   transition: opacity .4s var(--ease);
 }
+/* 原生 dialog 默认按内容收缩，这里显式铺满视口，视觉与原来的 div 层一致 */
+.relief-layer[open]{ display: grid; place-items: center; width: 100%; height: 100%; max-width: 100%; max-height: 100%; }
+/* 背景由层自身负责，避免原生 ::backdrop 叠出第二层黑 */
+.relief-layer::backdrop{ background: transparent; }
 .relief-layer.is-open{ opacity: 1; }
 .relief-inner{
   width: 100%; height: 100%;
@@ -3557,6 +3569,15 @@ body.privacy-mode .predict-line{ display: none; }
   </button>
 </div>
 
+<!-- [2.8] 解密失败保护：有记录打不开时明确提示并中止保存，绝不覆盖原始密文 -->
+<div class="storage-banner" id="decryptBanner" role="alert" hidden>
+  <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+  <p id="decryptBannerText">有记录无法解密，为防丢失已保留原样，本次保存已中止。</p>
+  <button class="storage-banner-close" type="button" id="decryptBannerClose" aria-label="关闭提示">
+    <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+  </button>
+</div>
+
 <svg class="svg-sprite" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8.5 10V7.5a3.5 3.5 0 1 1 7 0V10"/><circle cx="12" cy="15" r="1.2"/></symbol>
   <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></symbol>
@@ -3934,7 +3955,7 @@ body.privacy-mode .predict-line{ display: none; }
                 <label class="extra-group-label" for="temperatureInput">体温</label>
                 <!-- [6.3] 体温：和用药一样用遮罩层，防窥时字迹不外露 -->
                 <div class="med-shell">
-                  <input class="extra-med" type="number" id="temperatureInput" step="0.1" min="34" max="43" maxlength="4" placeholder="如 36.5" inputmode="decimal" autocomplete="off">
+                  <input class="extra-med" type="text" id="temperatureInput" maxlength="5" placeholder="如 36.5" inputmode="decimal" autocomplete="off" spellcheck="false">
                   <span class="med-mask" id="temperatureMask" aria-hidden="true">***</span>
                 </div>
               </div>
@@ -4287,6 +4308,9 @@ body.privacy-mode .predict-line{ display: none; }
         <button class="wiki-tab" type="button" role="tab" id="wikiTabMental" aria-selected="false" aria-controls="wikiList" data-wiki-cat="心理与情绪内耗" tabindex="-1">心理与情绪内耗<span class="wiki-tab-count" data-wiki-count="心理与情绪内耗">33</span></button>
         <button class="wiki-tab" type="button" role="tab" id="wikiTabPitfalls" aria-selected="false" aria-controls="wikiList" data-wiki-cat="生活避坑与智商税" tabindex="-1">生活避坑与智商税<span class="wiki-tab-count" data-wiki-count="生活避坑与智商税">33</span></button>
         <button class="wiki-tab" type="button" role="tab" id="wikiTabRedFlags" aria-selected="false" aria-controls="wikiList" data-wiki-cat="身体求救信号" tabindex="-1">身体求救信号<span class="wiki-tab-count" data-wiki-count="身体求救信号">33</span></button>
+        <button class="wiki-tab" type="button" role="tab" id="wikiTabMedicalPitfalls" aria-selected="false" aria-controls="wikiList" data-wiki-cat="就医避坑" tabindex="-1">就医避坑<span class="wiki-tab-count" data-wiki-count="就医避坑">13</span></button>
+        <button class="wiki-tab" type="button" role="tab" id="wikiTabCampusMental" aria-selected="false" aria-controls="wikiList" data-wiki-cat="校园心理" tabindex="-1">校园心理<span class="wiki-tab-count" data-wiki-count="校园心理">13</span></button>
+        <button class="wiki-tab" type="button" role="tab" id="wikiTabStigma" aria-selected="false" aria-controls="wikiList" data-wiki-cat="病耻感破除" tabindex="-1">病耻感破除<span class="wiki-tab-count" data-wiki-count="病耻感破除">12</span></button>
       </div>
 
       <div class="wiki-list" id="wikiList" role="region" aria-label="健康百科条目"></div>
@@ -4409,14 +4433,14 @@ body.privacy-mode .predict-line{ display: none; }
   <span>紧急舒缓</span>
 </button>
 
-<div class="relief-layer" id="reliefLayer" role="dialog" aria-modal="true" aria-labelledby="reliefTitle" hidden>
+<dialog class="relief-layer" id="reliefLayer" aria-label="紧急舒缓">
   <div class="relief-inner">
     <div class="relief-orb">
       <p id="reliefTitle">吸气…<br>呼气…<br><span>允许自己暂时宕机。</span><span class="relief-rhythm">4-7-8 节律 · 吸气 4 · 屏息 7 · 呼气 8</span></p>
     </div>
   </div>
   <button class="relief-exit" id="reliefExit" type="button">退出</button>
-</div>
+</dialog>
 
 <dialog class="import-dialog" id="importDialog" aria-labelledby="importTitle">
   <div class="dialog-inner">
@@ -6651,10 +6675,109 @@ body.privacy-mode .predict-line{ display: none; }
       });
     }
 
+    // [5.3] beforeunload 的同步兜底会写 localStorage；下次启动 IDB 里已有数据时不能直接跳过，
+    // 先按 updatedAt 合并 localStorage 里更新的记录，补回最后不到 1 秒的改动。
+    // [5.1] 返回 { changed, ok }：ok 表示合并流程完整跑完（加密态跳过也算 ok），
+    // changed 表示真的补进了新数据 —— 迁移清理要靠这两个值判断，不能靠返回值真假。
+    async function mergeNewerLegacyRecords() {
+      const result = { changed: 0, ok: true };
+      let encryptedRow = null;
+      try { encryptedRow = await idbGet('meta', 'encryption'); } catch (error) { encryptedRow = null; }
+      // 加密开启时 records 是密文，旧明文回流会破坏数据，直接跳过
+      if (encryptedRow && encryptedRow.value && encryptedRow.value.enabled) return result;
+
+      const legacy = readLegacy(STORAGE_KEY);
+      const stateRow = await idbGet('meta', STATE_META_KEY);
+      const current = stateRow && stateRow.value;
+
+      if (legacy && legacy.records && current && current.records && typeof current.records === 'object') {
+        const nextRecords = Object.assign({}, current.records);
+        let changed = 0;
+        Object.keys(legacy.records).forEach((key) => {
+          if (!isValidDateKey(key)) return;
+          const candidate = legacy.records[key];
+          if (!candidate || typeof candidate !== 'object') return;
+          // [复核] 旧键里可能是升级前的结构（emotion 单值、未知字段等），写回 IDB 前先归一化
+          const clean = sanitiseRecord(candidate, candidate.updatedAt);
+          if (!clean) return;
+          const existing = nextRecords[key];
+          const candidateAt = Number(clean.updatedAt) || 0;
+          const existingAt = existing ? (Number(existing.updatedAt) || 0) : -1;
+          if (candidateAt > existingAt) {
+            nextRecords[key] = clean;
+            changed += 1;
+          }
+        });
+        if (changed) {
+          await idbPut('meta', { key: STATE_META_KEY, value: Object.assign({}, current, { records: nextRecords }) });
+          result.changed += changed;
+        }
+      }
+
+      // [5.1] 信件也要合并：兜底可能写进最后一封还没落盘的信
+      const legacyLetters = readLegacy(LETTERS_KEY);
+      if (Array.isArray(legacyLetters) && legacyLetters.length) {
+        let storedLetters = [];
+        try { storedLetters = await idbGetAll('letters'); } catch (error) { storedLetters = []; }
+        const byId = new Map();
+        storedLetters.forEach((letter) => { if (letter && typeof letter.id === 'string') byId.set(letter.id, letter); });
+        try {
+          // 内存里已经写、但这一轮还没落盘的信也一起算进去
+          if (Array.isArray(timeLetters)) {
+            timeLetters.forEach((letter) => { if (letter && typeof letter.id === 'string' && !byId.has(letter.id)) byId.set(letter.id, letter); });
+          }
+        } catch (error) { /* timeLetters 尚未初始化时忽略 */ }
+        let lettersDirty = 0;
+        legacyLetters.forEach((letter) => {
+          if (!letter || typeof letter.id !== 'string') return;
+          const existing = byId.get(letter.id);
+          // 同一封以 createdAt 较新者为准
+          if (!existing) {
+            byId.set(letter.id, letter);
+            lettersDirty += 1;
+            return;
+          }
+          if (String(letter.createdAt || '') > String(existing.createdAt || '')) {
+            byId.set(letter.id, letter);
+            lettersDirty += 1; // 内容更新同样要写回，不能只数“新增的信”
+          }
+        });
+        if (lettersDirty) {
+          await idbPutMany('letters', Array.from(byId.values()));
+          result.changed += lettersDirty;
+        }
+      }
+
+      return result;
+    }
+
     async function migrateFromLocalStorage() {
-      const marker = await idbGet('meta', MIGRATED_KEY);
-      if (marker) {
-        if (Date.now() - Number(marker.at || 0) > LEGACY_TTL) cleanupLegacyKeys();
+      const markerBefore = await idbGet('meta', MIGRATED_KEY);
+      const markerAt = Number((markerBefore && markerBefore.at) || 0);
+      // [5.1] 先记下“这次打开时窗口是不是已经过期”，再合并 —— 合并会把窗口滚动到今天，
+      // 所以过期与否必须在滚动之前判断，否则清理分支永远不会触发。
+      const ttlExpired = Boolean(markerBefore) && Date.now() - markerAt > LEGACY_TTL;
+
+      // [5.1] 先合并旧键里比 IDB 新的记录与信件，再谈 7 天清理：
+      // 否则一旦旧键过期被删，最后 480ms 的改动就永远丢了。
+      let mergeResult = { changed: 0, ok: false };
+      try {
+        mergeResult = await mergeNewerLegacyRecords();
+      } catch (error) {
+        console.warn('[Store] 合并最新旧记录失败：', error);
+      }
+
+      if (mergeResult.ok) {
+        // [5.1] 只要合并渠道通畅，就把 7 天窗口滚动到今天：旧键可以晚点再清，数据不能丢
+        try { await idbPut('meta', { key: MIGRATED_KEY, at: Date.now() }); } catch (error) { /* 忽略 */ }
+      }
+
+      if (markerBefore) {
+        // [5.1] 只有「窗口已过期」+「合并成功」+「确实没有比 IDB 更新的数据」三个条件同时成立，
+        // 才允许删旧键；任何一条不满足都保留旧键。
+        if (ttlExpired && mergeResult.ok && !mergeResult.changed) {
+          cleanupLegacyKeys();
+        }
         return;
       }
 
@@ -6778,6 +6901,19 @@ body.privacy-mode .predict-line{ display: none; }
     let suspendSeal = false; // [2.6] 关闭加密时临时停用密封，把明文写回去
     let failedAttempts = 0;
     let lockedUntil = 0;
+    // [2.8] 解密失败保护：任何一条密文打不开都必须被记住；只要还有条目打不开，
+    // 就绝不允许把内存里的不完整数据写回存储（否则原始密文会被永久覆盖）。
+    let recordFailures = new Set();
+    let letterFailures = new Set();
+
+    function hasFailures() { return recordFailures.size > 0 || letterFailures.size > 0; }
+    function failureInfo() {
+      return {
+        total: recordFailures.size + letterFailures.size,
+        records: Array.from(recordFailures),
+        letters: Array.from(letterFailures)
+      };
+    }
 
     const subtle = () => (window.crypto && window.crypto.subtle) || null;
 
@@ -6938,6 +7074,7 @@ body.privacy-mode .predict-line{ display: none; }
     async function enable(password) { // [2.3]
       if (!supported()) throw new Error('unsupported');
       if (Store.backend !== 'idb') throw new Error('unsupported');
+      if (hasFailures()) throw new Error('decrypt-failures'); // [2.8] 有记录打不开时不允许再包一层
       const raw = await generateDekRaw();
       const device = await generateDeviceKek();
       const salt = randomBytes(VAULT_SALT_BYTES);
@@ -6996,6 +7133,7 @@ body.privacy-mode .predict-line{ display: none; }
     async function disable() { // [2.6]
       if (!enabled) return true;
       if (!unlocked) return false;
+      if (hasFailures()) return false; // [2.8] 有解不开的记录：先保住原始密文，别急着写明文
       suspendSeal = true;
       let plainWritten = false;
       try {
@@ -7072,6 +7210,7 @@ body.privacy-mode .predict-line{ display: none; }
     async function openValue(key, value) { // [2.1]
       if (isStateKeyForSeal(key)) {
         const records = {};
+        const failed = new Set(); // [2.8] 解不开的条目单独记账：不丢弃、不写回
         const source = value.records && typeof value.records === 'object' ? value.records : {};
         for (const dateKey of Object.keys(source)) {
           const record = source[dateKey];
@@ -7082,14 +7221,17 @@ body.privacy-mode .predict-line{ display: none; }
           try {
             records[dateKey] = JSON.parse(await openText(record));
           } catch (error) {
-            console.warn('[Vault] 一条记录解密失败，已跳过：', dateKey);
+            console.error('[Vault] 一条记录解密失败，已保留原始密文：', dateKey, error && error.message);
+            failed.add(dateKey);
           }
         }
+        recordFailures = failed;
         return Object.assign({}, value, { records });
       }
       if (isLettersKeyForSeal(key)) {
         const list = Array.isArray(value) ? value : [];
         const opened = [];
+        const failed = new Set(); // [2.8]
         for (const row of list) {
           if (!isBox(row)) { opened.push(row); continue; }
           try {
@@ -7097,9 +7239,11 @@ body.privacy-mode .predict-line{ display: none; }
             if (!letter.id) letter.id = row.id;
             opened.push(letter);
           } catch (error) {
-            console.warn('[Vault] 一封信解密失败，已跳过：', row.id);
+            console.error('[Vault] 一封信解密失败，已保留原始密文：', row.id, error && error.message);
+            failed.add(String(row.id));
           }
         }
+        letterFailures = failed;
         return opened;
       }
       return value;
@@ -7131,7 +7275,9 @@ body.privacy-mode .predict-line{ display: none; }
       status,
       supported,
       sealValue,
-      openValue
+      openValue,
+      hasFailures, // [2.8]
+      failureInfo
     };
   })();
 
@@ -7192,13 +7338,18 @@ body.privacy-mode .predict-line{ display: none; }
         createdAt: typeof letter.createdAt === 'string' ? letter.createdAt : new Date().toISOString(),
         unlockDate: letter.unlockDate,
         isTimeCapsule: letter.isTimeCapsule !== false
-      })).slice(-60);
+      })); // [5.2] 数量收敛交给 trimTimeLetters()，这里不再直接截断
     } catch (error) {
       return [];
     }
   }
 
   async function persistTimeLetters() { // [1.1] 改走 Store，返回语义不变
+    // [2.8] 解密失败的会话里绝不写回，避免覆盖原始密文
+    if (Vault.hasFailures() && !Vault.isSuspending()) {
+      showDecryptFailureNotice();
+      return false;
+    }
     try {
       return await Store.set(LETTERS_KEY, timeLetters);
     } catch (error) {
@@ -7233,7 +7384,6 @@ body.privacy-mode .predict-line{ display: none; }
   let storageErrorShown = false;
   let letterSaveTimer = null;
   let activeLetterId = null;
-  let reliefReturnFocus = null;
   let reliefCloseTimer = null;
   let reliefAudioContext = null;
   let reliefAudioSource = null;
@@ -7278,8 +7428,42 @@ body.privacy-mode .predict-line{ display: none; }
     });
   }
 
+  // [2.8] 解密失败：保留原始密文 + 中止保存 + 明确告知（绝不静默跳过）
+  let decryptNoticeAt = 0;
+  let decryptAlertShown = false;
+  function showDecryptFailureNotice(info) {
+    const failures = info || Vault.failureInfo();
+    if (!failures || !failures.total) return;
+    const summary = `有 ${failures.total} 条记录解密失败，为防丢失已保留原样，本次保存已中止。`;
+    if (decryptBanner && decryptBannerText) {
+      const detail = `${summary}新的修改不会被写入，直到这些记录可以恢复。请勿清空浏览器站点数据。`;
+      if (decryptBannerText.textContent !== detail) decryptBannerText.textContent = detail;
+      decryptBanner.hidden = false;
+    }
+    if (!decryptAlertShown) {
+      decryptAlertShown = true;
+      try {
+        window.alert(`${summary}\n\n原始密文已经原样保留，在你处理这些记录之前，新的修改不会被写入。\n请不要清空浏览器站点数据；可以尝试用主密码重新解锁，或从备份恢复。`);
+      } catch (error) { /* 环境禁用 alert 时忽略 */ }
+    }
+    const now = Date.now();
+    if (now - decryptNoticeAt < 4000) return;
+    decryptNoticeAt = now;
+    showToast(`${summary}新的修改暂不会保存。`, {
+      title: '保存已中止',
+      tone: 'care',
+      duration: 12000
+    });
+  }
+
   async function persist() { // [1.1] 改走 Store，返回语义不变
     await ensureStoreReady(); // [2.4] 加密状态已知之后才允许写
+    // [2.8] 有记录/信件解密失败时，内存里的数据不完整：绝不写回覆盖原始密文
+    if (Vault.hasFailures() && !Vault.isSuspending()) {
+      showDecryptFailureNotice();
+      return false;
+    }
+    if (decryptBanner) decryptBanner.hidden = true; // [2.8] 已恢复可解密：收起提示条
     // [加固2] 本页以为没开加密、但别的标签页已经开了：写之前重新确认一次（最多 1.5 秒一次）
     if (!Vault.isEnabled() && Store.backend === 'idb') {
       const now = Date.now();
@@ -7333,6 +7517,9 @@ body.privacy-mode .predict-line{ display: none; }
 
   // [1.1] 仅用于 beforeunload 等同步场景：主存储是异步的，这里同步落一份 localStorage 兜底
   function persistSyncFallback() {
+    // [2.8] 解密失败时不写兜底快照：内存数据不完整，不能当成“最新状态”落盘
+    // [fix] beforeunload 阶段浏览器必屏蔽 alert，这里只静默拒绝；可见提示交给页面内的 persist()
+    if (Vault.hasFailures()) return false;
     // [加固4] 加密一旦开启，同步兜底就不再可信：宁可丢这一次兜底，也不能把明文写出去
     if (Vault.isEnabled() || Vault.isSealed()) {
       storageOk = false;
@@ -7522,6 +7709,9 @@ body.privacy-mode .predict-line{ display: none; }
   // [1.4] 存储降级提示条
   const storageBanner = $('#storageBanner');
   const storageBannerClose = $('#storageBannerClose');
+  const decryptBanner = $('#decryptBanner'); // [2.8] 解密失败提示条
+  const decryptBannerText = $('#decryptBannerText');
+  const decryptBannerClose = $('#decryptBannerClose');
   // [2.2] 数据面板：本地加密
   const vaultToggleWrap = $('#vaultToggleWrap');
   const encryptionToggle = $('#encryptionToggle');
@@ -7718,7 +7908,8 @@ body.privacy-mode .predict-line{ display: none; }
     const today = currentTodayKey();
     // [4.1] 预测从“某一天”改成“一段范围”；关掉开关时彻底不画
     const prediction = state.settings.predictions === false ? null : getPrediction();
-    const predictedRange = prediction && prediction.reliable ? prediction : null;
+    // [5.1] 过期区间不再参与渲染，避免给过去的日期涂预测色
+    const predictedRange = prediction && prediction.reliable && !prediction.isOverdue ? prediction : null;
     const first = new Date(viewYear, viewMonth, 1);
     const offset = (first.getDay() + 6) % 7;
     const gridStart = new Date(viewYear, viewMonth, 1 - offset);
@@ -7741,11 +7932,15 @@ body.privacy-mode .predict-line{ display: none; }
       const isToday = key === today;
       const isSelected = key === selectedKey;
       // [3.3] 非经期但有症状的日子：只在右下角留一颗小圆点
+      // [fix] 补上体温、便便、其他不适：只要当天有这些记录，也应算“有症状”
       const hasSymptoms = !inPeriod && Boolean(record) && (
         Boolean(record.pain) ||
         Boolean(emotionKeysOf(record).length) || // [优化2] 旧单值情绪也算症状
         Boolean(record.sleep || record.exercise || record.intimacy || record.mucus) ||
-        Boolean(String(record.medication || '').trim())
+        Boolean(String(record.medication || '').trim()) ||
+        Boolean(String(record.temperature || '').trim()) ||
+        Boolean(record.bowel) ||
+        (Array.isArray(record.symptoms) && record.symptoms.length > 0)
       );
 
       if (inMonth) {
@@ -8084,14 +8279,29 @@ body.privacy-mode .predict-line{ display: none; }
     return Number.isFinite(numeric) && numeric >= TEMPERATURE_MIN && numeric <= TEMPERATURE_MAX_VALUE;
   }
 
-  // [6.6] 输入框过滤：只留数字和最多一个小数点（两位整数 + 一位小数）
+  // [6.6] 输入框过滤：只留数字和最多一个小数点（两位整数 + 一位小数）。
+  // [fix] 保留用户正在输入的末尾小数点（"36."），交给失焦时补全为 "36.0"，
+  // 避免把合法的中间态吃掉，也避免 input 事件把值截断成空串。
   function sanitiseTemperatureText(value) {
     let text = String(value == null ? '' : value).replace(/[^\d.]/g, '');
     const dot = text.indexOf('.');
-    if (dot === -1) return text.slice(0, 4);
+    if (dot === -1) return text.slice(0, 2);
     const whole = text.slice(0, dot).slice(0, 2);
     const fraction = text.slice(dot + 1).replace(/\./g, '').slice(0, 1);
     return `${whole}.${fraction}`;
+  }
+
+  // [fix] 失焦时补全合法的中间态：36. -> 36.0；其余原样返回（越界由范围校验拦下）
+  function normaliseTemperatureText(value) {
+    const text = String(value == null ? '' : value).trim();
+    if (/^\d{1,2}\.$/.test(text)) return `${text}0`;
+    return text;
+  }
+
+  // [2.8] 保存状态文案：解密失败导致的中止要说清楚，别让用户以为只是普通保存失败
+  function describeSaveStatus(saved, okText) {
+    if (saved) return okText || '已自动保存 · 只在此设备';
+    return Vault.hasFailures() ? '保存已中止 · 有记录无法解密' : '保存失败 · 请先导出备份';
   }
 
   async function applyRecordPatch(patch) { // [1.1] 异步化：内部 await persist()，返回值语义不变
@@ -8112,6 +8322,8 @@ body.privacy-mode .predict-line{ display: none; }
       // [6.1] 多选字段（symptoms）清空后是 []，同样不落盘
       if (value == null || value === '' || (Array.isArray(value) && !value.length)) delete next[field];
     });
+    // [fix] flow 不在 EXTRA_FIELD_KEYS 里，单独清理：取消「月经量」后不再残留 flow: null
+    if (next.flow == null || next.flow === '') delete next.flow;
     if (isRecordEmpty(next)) {
       delete state.records[selectedKey];
     } else {
@@ -8126,7 +8338,7 @@ body.privacy-mode .predict-line{ display: none; }
     refreshHero();
     refreshDataStats();
     refreshCycleToggleVisibility();
-    setSaveStatus(saved ? '刚刚保存 · 已写入本机' : '保存失败 · 请先导出备份', !saved);
+    setSaveStatus(describeSaveStatus(saved, '刚刚保存 · 已写入本机'), !saved);
     return saved;
   }
 
@@ -8225,7 +8437,7 @@ body.privacy-mode .predict-line{ display: none; }
       refreshDataStats();
       refreshCycleToggleVisibility();
       if (absorbed) syncDayControls(); // [1.5] 只同步按钮与提示，不动正在输入的日记
-      setSaveStatus(saved ? '已自动保存 · 只在此设备' : '保存失败 · 请先导出备份', !saved);
+      setSaveStatus(describeSaveStatus(saved), !saved);
     }
     if (showWarm && noteWarmPending) {
       noteWarmPending = false;
@@ -8350,7 +8562,9 @@ body.privacy-mode .predict-line{ display: none; }
       end: null,
       mean: info.averageCycle,
       sd: null,
-      cycles: intervals.length
+      cycles: intervals.length,
+      isOverdue: false,
+      daysLate: 0
     };
 
     // [4.2] 历史完整周期不足 2 个：不显示任何预测日期，也不用 28 天兜底
@@ -8372,6 +8586,11 @@ body.privacy-mode .predict-line{ display: none; }
     const end = addDaysToKey(predicted, spread);
     // [4.1] 置信度：≤2 天为高，3–5 天为中，>5 天为低
     const confidence = sd <= 2 ? '高' : sd <= 5 ? '中' : '低';
+    // [5.1] 预测区间已经完全落在过去：不再往过去涂色，改为诚实提示“已经推迟”
+    const today = currentTodayKey();
+    const isOverdue = end < today;
+    // [5.4] 推迟天数从“期望日”算起：区间中点才是真正的预期开始日
+    const daysLate = isOverdue ? Math.max(0, daysBetween(predicted, today)) : 0;
 
     return {
       reliable: true,
@@ -8379,6 +8598,8 @@ body.privacy-mode .predict-line{ display: none; }
       confidence,
       start,
       end,
+      isOverdue,
+      daysLate,
       mean: Math.round(mean),
       sd: roundedSd,
       cycles: intervals.length
@@ -8408,7 +8629,11 @@ body.privacy-mode .predict-line{ display: none; }
       return;
     }
     const prediction = getPrediction();
-    if (prediction.reliable) {
+    if (prediction.reliable && prediction.isOverdue) {
+      // [5.1] 区间已经过去：不假装还能预测，也不往过去涂色
+      predictText.textContent = `预计 ${formatPredictionRange(prediction)}，现在已经过去 ${prediction.daysLate} 天，还没有记录新的经期开始。周期偶尔波动很常见；若推迟 10 天以上，建议验孕并就医。`;
+      predictLine.dataset.state = 'overdue';
+    } else if (prediction.reliable) {
       predictText.textContent = `预计 ${formatPredictionRange(prediction)}（置信度：${prediction.confidence}）。基于你最近 ${prediction.cycles} 个周期，仅供参考。`;
       predictLine.dataset.state = 'ready';
     } else {
@@ -10274,6 +10499,12 @@ body.privacy-mode .predict-line{ display: none; }
   }
 
   async function downloadMemoImage() {
+    // [fix] 防窥模式下备忘录区只是模糊 + pointer-events:none，键盘仍能触发按钮，
+    // 这里补一道守卫，避免把私密内容导出成图片。
+    if (document.body.classList.contains('privacy-mode')) {
+      showToast('防窥模式中不导出备忘录。关闭眼睛后再试。', { title: '防窥模式中', tone: 'care', privacyNotice: true });
+      return;
+    }
     if (!currentMemo) {
       showToast('先写下一段描述，再生成一份备忘录。', { title: '还没有内容', tone: 'warm' });
       return;
@@ -10415,6 +10646,12 @@ body.privacy-mode .predict-line{ display: none; }
 
   async function exportData() { // [1.1] 异步化：await persist()
     const wasSealed = Vault.isSealed(); // [2.8]
+    // [fix] 锁定态下内存里没有数据（lockVaultNow 已重置），导出只会得到一份空备份，
+    // 还会误写 lastBackupAt 让「开启加密前的备份护栏」以为你已经备份过。这里直接拦住。
+    if (Vault.isEnabled() && !Vault.isUnlocked() && !Vault.isSuspending()) {
+      showToast('记录已锁定，请先解锁再导出备份。', { title: '先解锁', tone: 'care' });
+      return;
+    }
     if (wasSealed) {
       // [2.8] 导出始终是明文：先明确告知，再让用户自己决定放哪里
       showToast('导出文件是明文，请妥善保管。', {
@@ -10598,7 +10835,7 @@ body.privacy-mode .predict-line{ display: none; }
         added += 1;
         return;
       }
-      if ((next.updatedAt || 0) >= (existing.updatedAt || 0)) {
+      if ((next.updatedAt || 0) > (existing.updatedAt || 0)) {
         state.records[key] = next;
         updated += 1;
       } else {
@@ -10608,11 +10845,15 @@ body.privacy-mode .predict-line{ display: none; }
 
     // [0.6] 时空信件按 id 去重：本机已存在的 id 保留本机版本，只补充新 id
     const knownLetterIds = new Set(timeLetters.map((letter) => letter.id));
+    let lettersAdded = 0;
     incomingLetters.forEach((letter) => {
       if (knownLetterIds.has(letter.id)) return;
       timeLetters.push(letter);
       knownLetterIds.add(letter.id);
+      lettersAdded += 1;
     });
+    // [复核] 导入同样受 60 封规则约束：锁定信一封不删，超额的已解锁旧信按创建时间淘汰
+    const importTrim = trimTimeLetters(true);
     await persistTimeLetters(); // [0.6] 合并后立刻落盘
     refreshTimeLetterControl();
 
@@ -10632,7 +10873,7 @@ body.privacy-mode .predict-line{ display: none; }
 
     showToast(
       saved
-        ? `新增 ${added} 天，更新 ${updated} 天${kept ? `，保留本机较新记录 ${kept} 天` : ''}。`
+        ? `新增 ${added} 天，更新 ${updated} 天${kept ? `，保留本机较新记录 ${kept} 天` : ''}${lettersAdded ? `，新增 ${lettersAdded} 封信` : ''}${importTrim.dropped ? `，按 60 封上限淘汰 ${importTrim.dropped} 封已解锁旧信` : ''}${importTrim.limited ? '；已达到 60 封上限，请前往数据安全导出一份备份，以免信件丢失' : ''}。`
         : '记录已读入，但写入浏览器存储时遇到问题，请先导出备份。',
       { title: '导入完成', tone: saved ? 'warm' : 'care', duration: 8000 }
     );
@@ -11325,9 +11566,10 @@ body.privacy-mode .predict-line{ display: none; }
         ? `${greeting}我今天生理期突发严重痛经，实在无法去实验室，需要请假半天。今天的组会/任务我已跟同门说明，感谢您的理解。`
         : `${greeting}我今天生理期严重痛经并伴随身体不适，需要请假${days}天。近期的实验/文献进度我会在恢复后加班补上，抱歉打乱了安排，感谢导师理解。`;
     } else if (target === 'client') {
+      // [5.4] 请假条不代表诊断：删除“遵医嘱”的越权表述
       text = isHalf
         ? `${greeting}非常抱歉，我今天突发身体不适（严重痛经），上午需要卧床休息半天。原定的沟通/进度稍微延后，紧急事宜请留言，我稍后处理，感谢您的理解。`
-        : `${greeting}非常抱歉，我今天突发严重的身体不适，需遵医嘱休息${days}天。相关进度我已经整理好，如有紧急情况请随时电话联系我。给您带来的不便深表歉意。`;
+        : `${greeting}非常抱歉，我今天突发严重的身体不适，需要休息${days}天。相关进度我已经整理好，如有紧急情况请随时电话联系我。给您带来的不便深表歉意。`;
     } else {
       text = isHalf
         ? `${greeting}我今天生理期痛经比较严重，难以集中精力，想请半天假休息。手头紧急事项已简单交接，如有急事可留言或电话，感谢理解。`
@@ -12076,37 +12318,98 @@ body.privacy-mode .predict-line{ display: none; }
     }, 750);
   }
 
+  // [focus-trap] 层内只有一个「退出」按钮：Tab / Shift+Tab 一律拦下并锁回该按钮，
+  // 防止焦点跑到背后的网页或浏览器地址栏（原生 dialog 在只剩一个可聚焦元素时仍可能把焦点交给浏览器 UI）。
+  function trapReliefFocus(event) {
+    if (event.key !== 'Tab' || !reliefLayer || !reliefLayer.open) return;
+    event.preventDefault();
+    if (reliefExit && typeof reliefExit.focus === 'function') reliefExit.focus({ preventScroll: true });
+  }
+
   function openReliefPod() {
     // [0.8] 防窥模式下不打开舒缓舱，避免任何可能暴露状态的层浮上来
     if (document.body.classList.contains('privacy-mode')) return;
-    if (!reliefLayer || !reliefLayer.hidden) return;
+    if (!reliefLayer) return;
+    // [race] 允许在 380ms 淡出期间重新打开；完全打开时忽略重复点击。
+    // dialog 已经 open 时不能再调 showModal()（会抛 InvalidStateError），只把状态收回来。
+    const isFading = reliefLayer.open && !reliefLayer.classList.contains('is-open');
+    if (reliefLayer.open && !isFading) return;
     clearTimeout(reliefCloseTimer);
-    reliefReturnFocus = document.activeElement;
-    reliefLayer.hidden = false;
-    void reliefLayer.offsetWidth;
+    reliefCloseTimer = 0;
+    if (!reliefLayer.open) {
+      // [dialog] showModal() 进入 top layer：背景 inert、Esc 关闭由浏览器负责
+      if (typeof reliefLayer.showModal === 'function') reliefLayer.showModal();
+      else reliefLayer.setAttribute('open', '');
+      void reliefLayer.offsetWidth;
+    }
     document.body.classList.add('is-relief-open');
     reliefLayer.classList.add('is-open');
+    // [focus-trap] 捕获阶段先于浏览器默认 Tab 行为，真正把焦点锁死在层里
+    document.addEventListener('keydown', trapReliefFocus, true);
     startReliefAudio();
     if (reliefExit) reliefExit.focus({ preventScroll: true });
   }
 
   function closeReliefPod() {
-    if (!reliefLayer || reliefLayer.hidden) return;
+    if (!reliefLayer || !reliefLayer.open) return; // [dialog]
+    // [dialog] Esc 会同时触发 keydown 与 cancel，正在淡出时直接忽略第二次调用
+    if (!reliefLayer.classList.contains('is-open')) return;
     stopReliefAudio();
     reliefLayer.classList.remove('is-open');
     document.body.classList.remove('is-relief-open');
+    document.removeEventListener('keydown', trapReliefFocus, true); // [focus-trap]
     clearTimeout(reliefCloseTimer);
+    // [dialog] 先让淡出动画跑完，再真正 close()；焦点回收由原生 dialog 的 close() 负责
     reliefCloseTimer = setTimeout(() => {
-      if (!reliefLayer.classList.contains('is-open')) reliefLayer.hidden = true;
+      reliefCloseTimer = 0;
+      if (!reliefLayer.open || reliefLayer.classList.contains('is-open')) return;
+      if (typeof reliefLayer.close === 'function') reliefLayer.close();
+      else reliefLayer.removeAttribute('open');
+      document.removeEventListener('keydown', trapReliefFocus, true); // [focus-trap] 兜底
     }, 380);
-    if (reliefReturnFocus && typeof reliefReturnFocus.focus === 'function') {
-      reliefReturnFocus.focus({ preventScroll: true });
-    }
-    reliefReturnFocus = null;
+  }
+
+  function getTimeLettersForDate(key) {
+    return timeLetters.filter((letter) => letter.dateKey === key);
   }
 
   function getTimeLetterForDate(key) {
-    return timeLetters.find((letter) => letter.dateKey === key) || null;
+    return getTimeLettersForDate(key)[0] || null;
+  }
+
+  // [5.2] 时空信件上限：锁定中的信一封都不主动删，满额只提示；只有已经解锁的旧信才淘汰
+  const TIME_LETTER_LIMIT = 60;
+  let timeLetterLimitNoticeAt = 0;
+  function notifyTimeLetterLimit(force) {
+    if (!force && Date.now() - timeLetterLimitNoticeAt < 60000) return;
+    timeLetterLimitNoticeAt = Date.now();
+    showToast('时空信件已达到 60 封上限，请前往数据安全导出一份备份，以免信件丢失。', {
+      title: '时空信件已满',
+      tone: 'care',
+      duration: 12000
+    });
+  }
+  // [5.3] 淘汰方向修正：
+  // ① 未解锁的未来信还没被读过，删掉就是永久丢失，所以一封都不删，只提示用户先导出；
+  // ② 只有已解锁的旧信（早就到日子了）才按创建时间淘汰，保留最近解锁的几封。
+  function trimTimeLetters(silent) {
+    if (!Array.isArray(timeLetters) || timeLetters.length <= TIME_LETTER_LIMIT) {
+      return { dropped: 0, limited: false };
+    }
+    const today = currentTodayKey();
+    const byCreatedAt = (a, b) => String((a && a.createdAt) || '').localeCompare(String((b && b.createdAt) || ''));
+    const unlocked = timeLetters.filter((letter) => letter && letter.unlockDate && letter.unlockDate <= today).sort(byCreatedAt);
+    const locked = timeLetters.filter((letter) => letter && (!letter.unlockDate || letter.unlockDate > today));
+    const kept = new Set(locked);
+    const room = TIME_LETTER_LIMIT - kept.size;
+    if (room > 0) unlocked.slice(-room).forEach((letter) => kept.add(letter));
+    const next = timeLetters.filter((letter) => kept.has(letter));
+    const dropped = timeLetters.length - next.length;
+    timeLetters = next;
+    // 锁定信本身已经超过 60 封：不删，只提醒上限（等用户手动导出/清理）
+    const limited = kept.size > TIME_LETTER_LIMIT;
+    if (limited && !silent) notifyTimeLetterLimit();
+    return { dropped, limited };
   }
 
   function refreshTimeLetterControl() {
@@ -12134,21 +12437,27 @@ body.privacy-mode .predict-line{ display: none; }
     const content = String(dayNote ? dayNote.value : '').trim();
     if (!content) return false;
 
-    const existing = getTimeLetterForDate(selectedKey);
+    const dateLetters = getTimeLettersForDate(selectedKey);
+    // [fix] 已经封存（解锁日还没到）的信不再跟着备注改写，否则「封存」就失去意义
+    const sealedLetter = dateLetters.find((letter) => letter.unlockDate && letter.unlockDate > currentTodayKey());
+    if (sealedLetter) return true;
+    const existing = dateLetters[0] || null;
+    let trimResult = { dropped: 0, limited: false };
     if (existing) {
       if (existing.content === content) return true;
       existing.content = content.slice(0, MAX_NOTE);
     } else {
       const createdAt = new Date().toISOString();
-      timeLetters.push({
+      const newLetter = {
         id: `letter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         dateKey: selectedKey,
         content: content.slice(0, MAX_NOTE),
         createdAt,
         unlockDate: addDaysToKey(currentTodayKey(), 30),
         isTimeCapsule: true
-      });
-      timeLetters = timeLetters.slice(-60);
+      };
+      timeLetters.push(newLetter);
+      trimResult = trimTimeLetters(true); // [5.3] 锁定信不删，满额由下面的反馈统一提示
     }
 
     const saved = await persistTimeLetters();
@@ -12156,10 +12465,22 @@ body.privacy-mode .predict-line{ display: none; }
     if (settings.feedback) {
       const letter = getTimeLetterForDate(selectedKey);
       if (saved && letter) {
-        showToast(`这封信会在 ${formatDateCN(letter.unlockDate)} 开启。在那之前，先好好过今天。`, {
-          title: '已经替你封好',
-          tone: 'warm',
-          duration: 7600
+        if (trimResult.limited) {
+          // 已经是第 61 封且全部锁定：信保住了，但要提醒上限
+          notifyTimeLetterLimit(true);
+        } else {
+          showToast(`这封信会在 ${formatDateCN(letter.unlockDate)} 开启。在那之前，先好好过今天。`, {
+            title: '已经替你封好',
+            tone: 'warm',
+            duration: 7600
+          });
+        }
+      } else if (Vault.hasFailures()) {
+        // [fix] 解密保护期间写不进去：别把原因说成“存储空间不足”
+        showToast('解密保护已开启，这封信暂时不能封存；等记录可以恢复后再试。', {
+          title: '暂时不能封存',
+          tone: 'care',
+          duration: 9000
         });
       } else {
         showToast('这封信暂时没能封存。请检查浏览器存储空间。', {
@@ -12195,14 +12516,31 @@ body.privacy-mode .predict-line{ display: none; }
     }
 
     if (!timeLetterToggle.checked) {
-      const existing = getTimeLetterForDate(selectedKey);
-      if (existing) {
-        timeLetters = timeLetters.filter((letter) => letter.id !== existing.id);
-        await persistTimeLetters();
-        showToast('这封信不再封存了。想写的时候，随时可以重新盖一次章。', {
-          title: '已取消',
-          tone: 'warm'
-        });
+      // [fix] 同一天可能有多封信（导入按 id 去重），取消封存要把这一天的全删掉
+      const existingLetters = getTimeLettersForDate(selectedKey);
+      if (existingLetters.length) {
+        const ids = new Set(existingLetters.map((letter) => letter.id));
+        timeLetters = timeLetters.filter((letter) => !ids.has(letter.id));
+        const saved = await persistTimeLetters();
+        if (saved) {
+          showToast('这封信不再封存了。想写的时候，随时可以重新盖一次章。', {
+            title: '已取消',
+            tone: 'warm'
+          });
+        } else if (Vault.hasFailures()) {
+          // [fix] 解密保护期间持久化被拦：说清楚只是内存里取消了，刷新后会回来
+          showToast('已取消内存里的封存，但解密保护已开启，刷新后这封信可能重新出现。', {
+            title: '只在本次打开时取消',
+            tone: 'care',
+            duration: 9000
+          });
+        } else {
+          showToast('这次取消没能写入本机存储，刷新后这封信可能重新出现。', {
+            title: '没有保存成功',
+            tone: 'care',
+            duration: 9000
+          });
+        }
       }
       refreshTimeLetterControl();
       return;
@@ -12330,44 +12668,8 @@ body.privacy-mode .predict-line{ display: none; }
     });
   }
 
-  // [wiki] 外部数据文件：http(s) 下读取 wiki-data.json 并与内联词条合并，
-  // 新增条目只需更新 JSON；file:// 会被浏览器拦截，静默回退到内联离线副本。
-  let wikiHydrating = false;
-  async function hydrateMedicalWiki() {
-    if (wikiHydrating || typeof fetch !== 'function') return false;
-    if (location.protocol === 'file:') return false;
-    wikiHydrating = true;
-    try {
-      const response = await fetch('wiki-data.json', { cache: 'no-cache' });
-      if (!response.ok) return false;
-      const data = await response.json();
-      if (!Array.isArray(data) || !data.length) return false;
-      const seen = new Set(medicalWiki.map((item) => normalizeWikiText(item.q)));
-      let added = 0;
-      data.forEach((raw) => {
-        if (!raw || typeof raw.cat !== 'string' || typeof raw.q !== 'string' || typeof raw.a !== 'string') return;
-        const question = raw.q.trim();
-        if (!question) return;
-        const key = normalizeWikiText(question);
-        if (seen.has(key)) return;
-        seen.add(key);
-        medicalWiki.push({
-          cat: raw.cat.trim() || '健康百科',
-          q: question,
-          a: raw.a.trim(),
-          src: typeof raw.src === 'string' ? raw.src.trim() : ''
-        });
-        added += 1;
-      });
-      if (added) renderMedicalWiki();
-      return added > 0;
-    } catch (error) {
-      return false;
-    } finally {
-      wikiHydrating = false;
-    }
-  }
-
+  // [wiki] 词条全部内置在页面里；外部 wiki-data.json 已移除以避免重复数据与 404。
+  // 若以后想恢复“外部更新”，需要让相同问题的新条目覆盖内置条目，而不是直接跳过。
   function createWikiSourceIcon() {
     const svg = document.createElementNS(WIKI_SVG_NS, 'svg');
     svg.setAttribute('class', 'icon');
@@ -12631,6 +12933,24 @@ body.privacy-mode .predict-line{ display: none; }
         const record = currentRecord();
         const wasStart = Boolean(record && record.periodEvent === 'start');
         const next = record && record.periodEvent === type ? null : type;
+        // [fix] 连续两次点「经期开始」却没有点结束：先确认，避免悄悄覆盖上一条经期
+        if (next === 'start') {
+          const activeStart = getPeriodData().activeStart;
+          if (activeStart && activeStart !== selectedKey) {
+            const confirmed = typeof window.confirm === 'function'
+              ? window.confirm('你上一条经期似乎没有点结束，是否要覆盖上一次的开始时间？')
+              : true;
+            if (!confirmed) return;
+            // 覆盖：只删掉上一次的开始标记，那天的其他记录继续保留
+            const previous = state.records[activeStart];
+            if (previous) {
+              previous.periodEvent = null;
+              previous.updatedAt = Date.now();
+              if (isRecordEmpty(previous)) delete state.records[activeStart];
+              periodCache = null;
+            }
+          }
+        }
         const saved = await applyRecordPatch({ periodEvent: next });
         if (saved && next) maybeWarmMessage({ context: 'period' });
         if (saved && next === 'start' && !wasStart && selectedKey === currentTodayKey()) {
@@ -12774,8 +13094,24 @@ body.privacy-mode .predict-line{ display: none; }
     }
 
     if (reliefLayer) {
+      // [dialog] 点背景空白处关闭：原生 dialog 的背景点击事件目标就是 dialog 自身
       reliefLayer.addEventListener('click', (event) => {
         if (event.target === reliefLayer) closeReliefPod();
+      });
+      // [dialog] Esc：拦下原生的立即关闭，改走带淡出的 closeReliefPod()
+      reliefLayer.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        closeReliefPod();
+      });
+      // [dialog] 任何途径关闭后都兜底复位状态，避免背景仍被锁滚动
+      reliefLayer.addEventListener('close', () => {
+        // [race] dialog 已被新一轮 showModal() 重新打开时，旧 close 事件不得摘掉新会话的状态
+        if (reliefLayer.open) return;
+        clearTimeout(reliefCloseTimer);
+        reliefLayer.classList.remove('is-open');
+        document.body.classList.remove('is-relief-open');
+        stopReliefAudio();
+        document.removeEventListener('keydown', trapReliefFocus, true); // [focus-trap] 兜底解绑
       });
     }
 
@@ -12828,7 +13164,7 @@ body.privacy-mode .predict-line{ display: none; }
           refreshCycleToggleVisibility();
         }
         await flushTimeLetterUpdate();
-        setSaveStatus(saved ? '已自动保存 · 只在此设备' : '保存失败 · 请先导出备份', !saved);
+        setSaveStatus(describeSaveStatus(saved), !saved);
       }, 480);
     });
 
@@ -12876,10 +13212,13 @@ body.privacy-mode .predict-line{ display: none; }
         temperatureSaveTimer = 0;
         const record = currentRecord();
         const savedValue = record && record.temperature ? record.temperature : '';
-        const raw = temperatureInput.value.trim();
+        // [fix] 失焦先补全中间态："36." -> "36.0"
+        const raw = normaliseTemperatureText(temperatureInput.value);
+        // [fix] 空串绝不触发删除：恢复上一次有效值，避免半截输入把已有体温清掉
+        // （要清空体温请用「清空这几项」）
         if (!raw) {
           markTemperatureInvalid(false);
-          if (savedValue) await applyRecordPatch({ temperature: null });
+          temperatureInput.value = savedValue;
           return;
         }
         // [6.6] 34.0–43.0 之外：轻提示 + 恢复上一次保存的正确值，绝不写入异常数字
@@ -12895,6 +13234,7 @@ body.privacy-mode .predict-line{ display: none; }
           return;
         }
         markTemperatureInvalid(false);
+        if (temperatureInput.value !== raw) temperatureInput.value = raw;
         const value = raw.slice(0, TEMPERATURE_MAX);
         if (value !== savedValue) {
           await applyRecordPatch({ temperature: value });
@@ -12902,7 +13242,7 @@ body.privacy-mode .predict-line{ display: none; }
       };
 
       temperatureInput.addEventListener('input', () => {
-        // [6.6] 前端过滤：只允许数字和一个小数点，粘贴进来的其它字符直接清掉
+        // [fix] type=text 后前端仍做过滤：只允许数字和一个小数点，其它字符直接清掉
         const cleaned = sanitiseTemperatureText(temperatureInput.value);
         if (cleaned !== temperatureInput.value) {
           temperatureInput.value = cleaned;
@@ -12911,12 +13251,13 @@ body.privacy-mode .predict-line{ display: none; }
         if (document.body.classList.contains('privacy-mode')) return;
         if (isSelectedFuture()) return;
         clearTimeout(temperatureSaveTimer);
-        // [6.6] 越界时先不落盘，等失焦时统一提示
-        if (cleaned && !isTemperatureInRange(cleaned)) return;
+        // [fix] 空值、末尾小数点（还在输入小数）、越界值都不自动落盘，统一交给失焦处理
+        if (!cleaned || /\.$/.test(cleaned) || !isTemperatureInRange(cleaned)) return;
         temperatureSaveTimer = setTimeout(async () => {
           temperatureSaveTimer = 0;
-          const value = temperatureInput.value.trim().slice(0, TEMPERATURE_MAX);
-          await applyRecordPatch({ temperature: value || null });
+          const value = normaliseTemperatureText(temperatureInput.value);
+          if (!value || !isTemperatureInRange(value)) return;
+          await applyRecordPatch({ temperature: value });
         }, 500);
       });
 
@@ -13011,6 +13352,11 @@ body.privacy-mode .predict-line{ display: none; }
     });
 
     copyMemoButton.addEventListener('click', async () => {
+      // [fix] 防窥时按钮虽然模糊，键盘仍可激活；复制会把私密文本送进剪贴板
+      if (document.body.classList.contains('privacy-mode')) {
+        showToast('防窥模式中不复制备忘录。关闭眼睛后再试。', { title: '防窥模式中', tone: 'care', privacyNotice: true });
+        return;
+      }
       if (!currentMemo) return;
       const ok = await copyText(buildMemoPlainText(currentMemo));
       showToast(
@@ -13230,9 +13576,15 @@ body.privacy-mode .predict-line{ display: none; }
       });
     }
 
+    if (decryptBannerClose) { // [2.8] 提示条可关闭，但保存仍然保持中止
+      decryptBannerClose.addEventListener('click', () => {
+        if (decryptBanner) decryptBanner.hidden = true;
+      });
+    }
+
     document.addEventListener('keydown', (event) => {
       if (event.key !== 'Escape') return;
-      if (reliefLayer && !reliefLayer.hidden) {
+      if (reliefLayer && reliefLayer.open) { // [dialog] 原生 dialog 用 open 判断
         closeReliefPod();
         return;
       }
@@ -13375,10 +13727,14 @@ body.privacy-mode .predict-line{ display: none; }
     timeLetters.forEach((letter) => {
       if (letter && typeof letter.id === 'string' && !byId.has(letter.id)) byId.set(letter.id, letter);
     });
-    timeLetters = Array.from(byId.values()).slice(-60);
+    timeLetters = Array.from(byId.values());
+    const trimResult = trimTimeLetters(); // [5.2] 合并后仍按“先淘汰已解锁旧信”的规则收敛
+    // [5.2] 首屏收敛也要落盘，否则每次打开都重新淘汰同一封、且库里的第 61 封永远读不到
+    if (trimResult.dropped) persistTimeLetters().catch(() => {});
   }
 
   // [1.3] 迁移不阻塞首屏：先渲染，Store.ready() 后台完成后再刷新界面
+  let hydrateErrorShown = false;
   async function hydrateFromStore() {
     await ensureStoreReady(); // [2.4] 存储探测与加密状态都就绪之后再读数据
 
@@ -13404,6 +13760,17 @@ body.privacy-mode .predict-line{ display: none; }
         mergeHydratedLetters(await loadTimeLetters());
       } catch (error) {
         console.warn('[Store] 读取持久化数据失败：', error);
+        // [fix] 读取失败时别让用户面对一份“空白手帐”：给出可见提示，避免误以为记录丢了
+        if (!hydrateErrorShown) {
+          hydrateErrorShown = true;
+          setTimeout(() => {
+            showToast('没能读取本机记录。如果页面刚打开，请先刷新一次；仍然不行就先导出备份再排查。', {
+              title: '读取遇到问题',
+              tone: 'care',
+              duration: 12000
+            });
+          }, 700);
+        }
       }
     }
 
@@ -13420,6 +13787,10 @@ body.privacy-mode .predict-line{ display: none; }
       syncDayControls();
       maskPrivacyTexts();
     }
+
+    // [2.8] 有记录/信件没解开：保留密文、中止保存，并明确告诉用户
+    if (Vault.hasFailures()) showDecryptFailureNotice();
+    else if (decryptBanner) decryptBanner.hidden = true;
 
     if (storageDegraded) {
       showStorageBanner(); // [1.4]
@@ -13520,6 +13891,7 @@ body.privacy-mode .predict-line{ display: none; }
     } catch (error) {
       console.warn('[Store] 多标签页同步读取失败：', error);
     }
+    if (Vault.hasFailures()) showDecryptFailureNotice(); // [2.8]
     periodCache = null;
     renderCalendar();
     renderDayPanel();
@@ -13800,6 +14172,11 @@ body.privacy-mode .predict-line{ display: none; }
       showVaultUnlockLayer();
       return;
     }
+    if (Vault.hasFailures()) { // [2.8] 有记录打不开：先别把密文换成不完整的明文
+      showDecryptFailureNotice();
+      showToast('有记录无法解密，为防丢失暂时不能关闭加密。', { title: '加密仍开启', tone: 'care', duration: 9000 });
+      return;
+    }
     const ok = await Vault.disable();
     refreshVaultPanel(true);
     if (ok) {
@@ -13860,8 +14237,6 @@ body.privacy-mode .predict-line{ display: none; }
     refreshPainChart();
     renderMyths('', null);
     renderMedicalWiki();
-    // [wiki] 后台补一次外部数据文件，成功则重渲染（不阻塞首屏）
-    hydrateMedicalWiki();
     refreshTimeLetterControl();
     wireEvents();
     setupReveal();

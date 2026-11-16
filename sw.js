@@ -3,11 +3,10 @@
  * localStorage 始终由页面本身管理，缓存清理不会触碰用户记录。
  */
 
-const CACHE_VERSION = 'v6'; // [0.10] 提升版本号，激活时清掉旧外壳
+const CACHE_VERSION = 'v7'; // [0.10] 提升版本号，激活时清掉旧外壳（v7：移除冗余的 wiki-data.json）
 const CACHE_NAME = `hera-journal-shell-${CACHE_VERSION}`;
 const APP_SHELL = [
   './index.html',
-  './wiki-data.json',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -90,34 +89,6 @@ async function cacheFirst(request) {
   }
 }
 
-// [0.10] 先给缓存、后台顺手更新：wiki-data.json 更新后下次打开即生效
-async function staleWhileRevalidate(request) {
-  const cache = await caches.open(CACHE_NAME);
-  const cached = await cache.match(request);
-
-  const networkPromise = fetch(request)
-    .then((response) => {
-      if (response && response.ok && new URL(request.url).origin === self.location.origin) {
-        cache.put(request, response.clone()).catch(() => {});
-      }
-      return response;
-    })
-    .catch(() => null);
-
-  if (cached) {
-    networkPromise; // 后台继续更新，不阻塞返回
-    return cached;
-  }
-
-  const fresh = await networkPromise;
-  if (fresh) return fresh;
-
-  return new Response('离线状态，这个资源暂时不可用。', {
-    status: 503,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-  });
-}
-
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -130,11 +101,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // [0.10] 词典数据走「缓存优先 + 后台更新」，其余静态资源仍是纯缓存优先
-  if (url.pathname.endsWith('/wiki-data.json')) {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
-
+  // 其余静态资源一律缓存优先（百科数据已内置在 index.html，不再有单独的 JSON 外壳）
   event.respondWith(cacheFirst(request));
 });
